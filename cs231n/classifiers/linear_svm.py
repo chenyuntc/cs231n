@@ -33,7 +33,10 @@ def svm_loss_naive(W, X, y, reg):
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
       if margin > 0:
+        #change here
         loss += margin
+        dW[:,j]+=X[i]
+        dW[:,y[i]]-=X[i]
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
@@ -41,7 +44,8 @@ def svm_loss_naive(W, X, y, reg):
 
   # Add regularization to the loss.
   loss += 0.5 * reg * np.sum(W * W)
-
+  dW /= num_train
+  dW+= reg*W
   #############################################################################
   # TODO:                                                                     #
   # Compute the gradient of the loss function and store it dW.                #
@@ -62,6 +66,7 @@ def svm_loss_vectorized(W, X, y, reg):
   Inputs and outputs are the same as svm_loss_naive.
   """
   loss = 0.0
+  delta=1.0
   dW = np.zeros(W.shape) # initialize the gradient as zero
 
   #############################################################################
@@ -70,6 +75,18 @@ def svm_loss_vectorized(W, X, y, reg):
   # result in loss.                                                           #
   #############################################################################
   pass
+
+  Y_predict=X.dot(W)
+  margin=Y_predict-Y_predict[y]+delta
+  margin[y]=0
+  wrong_p=margin>0
+  margin=margin[wrong_p]
+  N=X.shape[0]
+  loss=1.0/N*np.sum(margin)+reg*np.sum(W**2)
+
+
+
+
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -85,6 +102,29 @@ def svm_loss_vectorized(W, X, y, reg):
   # loss.                                                                     #
   #############################################################################
   pass
+  # dW=X[wrong_p[: ]]
+  N,D=Y_predict.shape
+  C=W.shape[1]
+
+  Y_bcst=Y_predict.reshape(N,1,C)
+  Wrong_p_bcst=wrong_p.reshape(N,1,C)
+  X_bcst=X.reshape(N,D,1)
+
+  d_W1=X_bcst*Wrong_p_bcst
+
+  dW1=d_W1.sum(axis=0)
+  yy=y.reshape(N,1,1)
+  # d_w2=Wrong_p_bcst*yy
+  wrongnum=wrong_p.sum(axis=1).reshape(-1,1,1)
+  dW2=np.zeros_like(dW1)
+  dW2[np.arange(N),:,y]-=wrongnum*X_bcst[np.arange(N),:,0]
+  dW3=2*reg*W
+
+  dW=dW1+dW2+dW3
+
+
+
+
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################

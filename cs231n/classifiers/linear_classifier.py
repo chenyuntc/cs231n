@@ -5,6 +5,7 @@ from cs231n.classifiers.softmax import *
 class LinearClassifier(object):
 
   def __init__(self):
+    # 0.001 * np.random.randn(dim, num_classes)
     self.W = None
 
   def train(self, X, y, learning_rate=1e-3, reg=1e-5, num_iters=100,
@@ -50,10 +51,12 @@ class LinearClassifier(object):
       # replacement is faster than sampling without replacement.              #
       #########################################################################
       pass
+      sample_index=np.random.choice(num_train,batch_size,replace=True)
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
-
+      X_batch=X[sample_index]
+      y_batch=y[sample_index]
       # evaluate loss and gradient
       loss, grad = self.loss(X_batch, y_batch, reg)
       loss_history.append(loss)
@@ -64,6 +67,8 @@ class LinearClassifier(object):
       # Update the weights using the gradient and the learning rate.          #
       #########################################################################
       pass
+      self.W=self.W-learning_rate**grad
+
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
@@ -72,6 +77,7 @@ class LinearClassifier(object):
         print 'iteration %d / %d: loss %f' % (it, num_iters, loss)
 
     return loss_history
+
 
   def predict(self, X):
     """
@@ -92,6 +98,8 @@ class LinearClassifier(object):
     # Implement this method. Store the predicted labels in y_pred.            #
     ###########################################################################
     pass
+    Y_pred=X.T.dot(self.W)
+    y_pred=np.argmax(Y_pred,axis=1)
     ###########################################################################
     #                           END OF YOUR CODE                              #
     ###########################################################################
@@ -112,8 +120,12 @@ class LinearClassifier(object):
     - loss as a single float
     - gradient with respect to self.W; an array of the same shape as W
     """
-    pass
-
+    # #pass
+    # y_pred=X_batch.dot(self.W)-y_batch
+    # y_pred_best_score=y_pred[np.arange(y_pred.shape[0]),y_batch]
+    # loss=(1.0/X_batch.shape[0])*(y_pred-y_pred_best_score.reshape([-1,1])).sum(axis=1)
+    # gradient=np.zeros_like(self.W)
+    # return loss,gradient
 
 class LinearSVM(LinearClassifier):
   """ A subclass that uses the Multiclass SVM loss function """
