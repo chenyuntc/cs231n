@@ -1,3 +1,4 @@
+# coding:utf8
 import numpy as np
 
 class KNearestNeighbor(object):
@@ -73,7 +74,7 @@ class KNearestNeighbor(object):
         #####################################################################
 
         pass
-        dists[i][j]=np.sum(np.sqrt((X[i]-self.X_train[j])**2))
+        dists[i][j] = np.sqrt(np.sum((X[i] - self.X_train[j]) ** 2))
         #####################################################################
         #                       END OF YOUR CODE                            #
         #####################################################################
@@ -127,11 +128,18 @@ class KNearestNeighbor(object):
     #       and two broadcast sums.                                         #
     #########################################################################
     pass
-    X.reshape((1,num_test,-1))
-    self.X_train.reshape(num_train,1,-1)
+    # 不应该直接利用广播原则相减,这样内存不够用的
+    # X=X.reshape((1,num_test,-1)).astype('uint8')
+    # print X.shape,self.X_train.reshape(num_train,1,-1).shape
+    # diff=X-self.X_train.reshape(num_train,1,-1).astype('uint8')
+    # dists=np.sum(np.sqrt(diff**2),1).T
+    # (x1-x2)^2=x1^2+x2^2+2*x1*x2
+    x1x2 = X.dot(self.X_train.T)
+    quadx1 = np.sum(X ** 2, axis=1)
+    quadx2 = np.sum(self.X_train ** 2, axis=1)
+    dists = quadx2 + quadx1.reshape(-1, 1) - 2 * x1x2
+    dists = np.sqrt(dists)
 
-    diff=X-self.X_train
-    dists=np.sum(np.sqrt(diff**2),2).T
     #########################################################################
     #                         END OF YOUR CODE                              #
     #########################################################################
@@ -166,7 +174,10 @@ class KNearestNeighbor(object):
       #########################################################################
       #########################################################################
       ordered_index=np.argsort(dists,axis=1)
+      ordered_index = self.y_train[ordered_index]
+      # print 'order_index',ordered_index
       KNN_index=ordered_index[:,:k]
+      # print 'kNN_index'  ,KNN_index
       # kNN_labels=dists[np.arange(0,num_test).reshape(-1,1),KNN_index]
       # TODO:                                                                 #
       # Now that you have found the labels of the k nearest neighbors, you    #
@@ -176,6 +187,7 @@ class KNearestNeighbor(object):
       #########################################################################
       from scipy.stats import  mode
       Labels=mode(KNN_index, axis=1).mode
+      # print 'Labels',Labels
       y_pred=Labels[:,0]
       #########################################################################
       #                           END OF YOUR CODE                            # 
