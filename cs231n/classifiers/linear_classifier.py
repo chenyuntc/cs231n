@@ -1,4 +1,3 @@
-import numpy as np
 from cs231n.classifiers.linear_svm import *
 from cs231n.classifiers.softmax import *
 
@@ -67,7 +66,7 @@ class LinearClassifier(object):
       # Update the weights using the gradient and the learning rate.          #
       #########################################################################
       pass
-      self.W=self.W-learning_rate**grad
+      self.W = self.W - learning_rate * grad
 
       #########################################################################
       #                       END OF YOUR CODE                                #
@@ -98,7 +97,7 @@ class LinearClassifier(object):
     # Implement this method. Store the predicted labels in y_pred.            #
     ###########################################################################
     pass
-    Y_pred=X.T.dot(self.W)
+    Y_pred = X.dot(self.W)
     y_pred=np.argmax(Y_pred,axis=1)
     ###########################################################################
     #                           END OF YOUR CODE                              #
