@@ -1,5 +1,5 @@
 import numpy as np
-from random import shuffle
+
 
 def svm_loss_naive(W, X, y, reg):
   """
@@ -74,23 +74,18 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
 
+  N = X.shape[0]
   Y_predict=X.dot(W)
-  margin=Y_predict-Y_predict[y]+delta
-  margin[y]=0
+  margin = Y_predict - Y_predict[np.arange(N), y].reshape(-1, 1) + delta
+  margin[np.arange(N), y] = 0
   wrong_p=margin>0
   margin=margin[wrong_p]
-  N=X.shape[0]
-  loss=1.0/N*np.sum(margin)+reg*np.sum(W**2)
-
-
-
+  loss = 1.0 / N * np.sum(margin) + reg * np.sum(W ** 2) * 0.5
 
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-
 
   #############################################################################
   # TODO:                                                                     #
@@ -101,30 +96,27 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
   # dW=X[wrong_p[: ]]
-  N,D=Y_predict.shape
-  C=W.shape[1]
+  N, C = Y_predict.shape
+  D = X.shape[1]
 
-  Y_bcst=Y_predict.reshape(N,1,C)
+  # Y_bcst=Y_predict.reshape(N,1,C)
   Wrong_p_bcst=wrong_p.reshape(N,1,C)
   X_bcst=X.reshape(N,D,1)
 
   d_W1=X_bcst*Wrong_p_bcst
 
   dW1=d_W1.sum(axis=0)
-  yy=y.reshape(N,1,1)
+  # yy=y.reshape(N,1,1)
   # d_w2=Wrong_p_bcst*yy
-  wrongnum=wrong_p.sum(axis=1).reshape(-1,1,1)
+  wrongnum = wrong_p.sum(axis=1).reshape(-1, 1)
+  util_v = np.zeros([N, C])
+  util_v[np.arange(N), y] = 1
+  wrongnum = (wrongnum * util_v).reshape(N, 1, C)
   dW2=np.zeros_like(dW1)
-  dW2[np.arange(N),:,y]-=wrongnum*X_bcst[np.arange(N),:,0]
-  dW3=2*reg*W
-
-  dW=dW1+dW2+dW3
-
-
-
-
+  dW2 -= np.sum(wrongnum * X_bcst, axis=0)
+  dW3 = reg * W
+  dW = (dW1 + dW2) / (N + 0.0) + dW3
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
