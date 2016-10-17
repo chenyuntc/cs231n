@@ -35,16 +35,17 @@ def softmax_loss_naive(W, X, y, reg):
   for xi, yi in zip(X, y):
     Y = xi.dot(W)
     denominator = np.sum(np.exp(Y))
-    loss += np.log(np.exp(Y[yi]) / denominator)
+    loss -= Y[yi]
+    loss += np.log(denominator)
     dW[:, yi] -= xi
-    dW += 1 / denominator * xi.reshape(-1, 1) * np.exp(Y).reshape(1, -1)
+    dW += ((1 / denominator) * (xi.reshape(-1, 1)) * (np.exp(Y).reshape(1, -1)))
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
   loss /= N
   loss += reg * np.sum(W ** 2)
   dW /= N
-  dW += 2 * W
+  dW += 2 * reg * W
   return loss, dW
 
 
@@ -63,24 +64,33 @@ def softmax_loss_vectorized(W, X, y, reg):
   Y -= C.reshape(-1, 1)
   score = np.exp(Y)
   correct_class = score[np.arange(N), y]
-  N_sum = np.sum(score, axis=1)
+  N_sum = np.sum((score), axis=1)
   llh = correct_class / N_sum
-  loss += np.sum(llh)
-  loss / + N
-  loss += reg * W ** 2
+  loss -= (np.sum(np.log(llh)))
+
+  loss /= N
+  loss += reg * np.sum(W ** 2)
   #############################################################################
   # TODO: Compute the softmax loss and its gradient using no explicit loops.  #
   # Store the loss in loss and the gradient in dW. If you are not careful     #
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
-  dW += (1 / Y.sum(axis=1).reshape(N, 1, 1) * X.reshape(N, 1, D) * Y.reshape(N, C, 1)).np.sum(axis=1)
+
+  fenmu = (1 / np.exp(Y).sum(axis=1)).reshape(N, 1, 1)
+  x_refactor = X.reshape(N, D, 1)
+  y_reshape = (np.exp(Y).reshape(N, 1, Y.shape[1]))
+  shape_ = fenmu * x_refactor * y_reshape
+
+  dW += (shape_.sum(axis=0))
+  util_v = np.zeros([N, 1, Y.shape[1]])
+  util_v[np.arange(N), :, y] = 1
+  dw2 = (X.reshape(N, D, 1) * (util_v)).sum(axis=0)
+  dW -= dw2
   dW /= N
-  dW += reg * W
+  dW += 2 * reg * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
-
   return loss, dW
 
