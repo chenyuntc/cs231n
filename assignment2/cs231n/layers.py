@@ -132,7 +132,16 @@ def batchnorm_forward(x, gamma, beta, bn_param):
 
   At each timestep we update the running averages for mean and variance using
   an exponential decay based on the momentum parameter:
- ! important 也就是说分为 训练和测试, 训练时候直接用running_var 但是测试的时候还要参考之前的
+
+
+  ----------------
+ ! important 也就是说分为 训练和测试, 训练时候直接用running_var 但是测试的时候还要参考之前的(!!!!!wrong)
+  when test normalize, it doesn't use previous 
+  but when test it use all of  the training thus the previous. 
+  in a word running_mean store all value only for test time
+-----------------------
+
+
   running_mean = momentum * running_mean + (1 - momentum) * sample_mean
   running_var = momentum * running_var + (1 - momentum) * sample_var
 
@@ -184,14 +193,14 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     sample_mean = np.mean(x, axis=0)
     sample_var = np.mean(x ** 2, axis=0) - sample_mean ** 2
 
-    running_mean = sample_mean
-    running_var = sample_var
-    x_hat = (x - running_mean.reshape(1, -1)) / np.sqrt(running_var.reshape(1, -1) + eps)
+   
+    x_hat = (x - sample_mean.reshape(1, -1)) / np.sqrt(sample_var.reshape(1, -1) + eps)
 
     out = gamma * x_hat + beta
-    cache = (x, sample_mean, sample_var, eps, running_mean, running_var, x_hat, momentum, beta, gamma)
+    cache = (x, sample_mean, sample_var, eps, sample_mean, sample_var, x_hat, momentum, beta, gamma)
 
-
+    running_mean = momentum * running_mean + (1 - momentum) * sample_mean
+    running_var = momentum * running_var + (1 - momentum) * sample_var
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
@@ -662,11 +671,15 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
   # version of batch normalization defined above. Your implementation should  #
   # be very short; ours is less than five lines.                              #
   #############################################################################
+  N,C,H,W=x.shape
+  X=np.transpose(x,(0,2,3,1)).reshape( -1 , C )
+  out, cache=batchnorm_forward(X,gamma,beta,bn_param)
   pass
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-
+  out=out.reshape(N,H,W,C)
+  out=np.transpose(out,(0,3,1,2))
   return out, cache
 
 
@@ -692,7 +705,14 @@ def spatial_batchnorm_backward(dout, cache):
   # version of batch normalization defined above. Your implementation should  #
   # be very short; ours is less than five lines.                              #
   #############################################################################
-  pass
+  N, C, H, W=dout.shape
+  dout=np.transpose(dout,(0,2,3,1)).reshape(-1,C)
+  dx,dgamma,dbeta=batchnorm_backward(dout,cache)
+  dx=dx.reshape(N,H,W,C)
+  dx=np.transpose(dx,(0,3,1,2))
+
+
+
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
