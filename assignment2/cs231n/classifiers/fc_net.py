@@ -10,33 +10,32 @@ import numpy as np
 
 class TwoLayerNet(object):
   """
-  A two-layer fully-connected neural network with ReLU nonlinearity and
-  softmax loss that uses a modular layer design. We assume an input dimension
-  of D, a hidden dimension of H, and perform classification over C classes.
-  
-  The architecure should be affine - relu - affine - softmax.
+    A two-layer fully-connected neural network with ReLU nonlinearity and
+    softmax loss that uses a modular layer design. We assume an input dimension
+    of D, a hidden dimension of H, and perform classification over C classes.
 
-  Note that this class does not implement gradient descent; instead, it
-  will interact with a separate Solver object that is responsible for running
-  optimization.
+    The architecure should be affine - relu - affine - softmax.
 
-  The learnable parameters of the model are stored in the dictionary
-  self.params that maps parameter names to numpy arrays.
-  """
+    Note that this class does not implement gradient descent; instead, it
+    will interact with a separate Solver object that is responsible for running
+    optimization.
 
-  def __init__(self, input_dim=3 * 32 * 32, hidden_dim=100, num_classes=10,
-               weight_scale=1e-3, reg=0.0):
+    The learnable parameters of the model are stored in the dictionary
+    self.params that maps parameter names to numpy arrays.
     """
-    Initialize a new network.
 
-    Inputs:
-    - input_dim: An integer giving the size of the input
-    - hidden_dim: An integer giving the size of the hidden layer
-    - num_classes: An integer giving the number of classes to classify
-    - dropout: Scalar between 0 and 1 giving dropout strength.
-    - weight_scale: Scalar giving the standard deviation for random
-      initialization of the weights.
-    - reg: Scalar giving L2 regularization strength.
+  def __init__(self, input_dim=3 * 32 * 32, hidden_dim=100, num_classes=10, weight_scale=1e-3, reg=0.0):
+    """
+      Initialize a new network.
+
+      Inputs:
+      - input_dim: An integer giving the size of the input
+      - hidden_dim: An integer giving the size of the hidden layer
+      - num_classes: An integer giving the number of classes to classify
+      - dropout: Scalar between 0 and 1 giving dropout strength.
+      - weight_scale: Scalar giving the standard deviation for random
+        initialization of the weights.
+      - reg: Scalar giving L2 regularization strength.
     """
     self.params = {}
     self.reg = reg
@@ -49,7 +48,7 @@ class TwoLayerNet(object):
     # weights and biases using the keys 'W1' and 'b1' and second layer weights #
     # and biases using the keys 'W2' and 'b2'.                                 #
     ############################################################################
-    self.params['W1']=weight_scale*np.random.randn(input_dim,hidden_dim)
+    self.params['W1'] = weight_scale * np.random.randn(input_dim, hidden_dim)
     self.params['b1']=0
     self.params['W2']=weight_scale*np.random.randn(hidden_dim,num_classes)
     self.params['b2']=0
@@ -189,16 +188,14 @@ class FullyConnectedNet(object):
     pass
 
     dims=zip([input_dim]+hidden_dims[:],hidden_dims[:]+[num_classes])
- 
 
-  
     for index_,dim in enumerate(dims):
  
       self.params['W'+str(index_+1)]=weight_scale*np.random.randn(dim[0],dim[1])
-      self.params['b'+str(index_+1)]=0
-      if use_batchnorm:
-        self.params['beta'+str(1+index_)]=1
-        self.params['gamma'+str(1+index_)]=1
+      self.params['b'+str(index_+1)]=np.zeros(dim[1])
+      if use_batchnorm and index_<len(dims)-1:
+        self.params['beta'+str(1+index_)]=np.ones(dim[1])
+        self.params['gamma'+str(1+index_)]=np.ones(dim[1])
 
     ############################################################################
     #                             END OF YOUR CODE                             #
@@ -223,8 +220,10 @@ class FullyConnectedNet(object):
       self.bn_params = [{'mode': 'train'} for i in xrange(self.num_layers - 1)]
 
     # Cast all parameters to the correct datatype
+
+    
     for k, v in self.params.iteritems():
-      if (not isinstance(v,int)):self.params[k] = v.astype(dtype)
+       self.params[k] = v.astype(dtype)
 
   def loss(self, X, y=None):
     """
@@ -258,10 +257,9 @@ class FullyConnectedNet(object):
     ############################################################################
     pass
     cache={}
-    
-    
     out_tmp=X
     for layer_index in xrange(self.num_layers-1):
+     
       out_tmp,cache_tmp=affine_forward(out_tmp,self.params['W'+str(layer_index+1)],self.params['b'+str(layer_index+1)])
       cache['out'+str(layer_index+1)],cache['cache'+str(layer_index+1)]=out_tmp,cache_tmp
       if self.use_batchnorm:
@@ -275,6 +273,7 @@ class FullyConnectedNet(object):
       out_tmp,cache_tmp=relu_forward(out_tmp)
       cache['out_relu'+str(layer_index+1)]=out_tmp
       cache['cache_relu'+str(layer_index+1)]=cache_tmp
+
       if self.use_dropout:
         out_tmp,cache_tmp=dropout_forward(out_tmp,self.dropout_param)
         cache['out_drop'+str(layer_index+1)]=out_tmp
@@ -287,9 +286,8 @@ class FullyConnectedNet(object):
     #                             END OF YOUR CODE                             #
     ############################################################################
 
-    scores,cache_tmp=affine_forward(out_tmp,self.params['W'+str(self.num_layers)],
-self.params['b'+str(self.num_layers)])
-    cache['last_out']=scores
+    scores,cache_tmp=affine_forward(out_tmp,self.params['W'+str(self.num_layers)],self.params['b'+str(self.num_layers)])
+    
     cache['last_cache']=cache_tmp
     # If test mode return early
     if mode == 'test':
@@ -310,11 +308,13 @@ self.params['b'+str(self.num_layers)])
     # of 0.5 to simplify the expression for the gradient.                      #
     ############################################################################
     loss,dout=softmax_loss(scores,y)
-    dout,self.params['W'+str(self.num_layers)],self.params['b'+str(self.num_layers)]=affine_backward(dout,cache['last_cache'])
+    loss+=(0.5*self.reg*np.sum(self.params['W'+str(self.num_layers)]**2))
+    dout,grads['W'+str(self.num_layers)],grads['b'+str(self.num_layers)]=affine_backward(dout,cache['last_cache'])
+    grads['W'+str(self.num_layers)]+= (self.reg*self.params['W'+str(self.num_layers)])
+    # print (self.reg*self.params['W'+str(layer_index)]).shape,grads['W'+str(self.num_layers)].shape
     for layer_index in xrange(self.num_layers-2,-1,-1):
-        print 'layer',layer_index
-        print (0,5*self.reg*np.sum(self.params['W'+str(layer_index+1)]**2))
-        loss+=(0,5*self.reg*np.sum(self.params['W'+str(layer_index+1)]**2))
+
+        loss+=(0.5*self.reg*np.sum(self.params['W'+str(layer_index+1)]**2))
         if self.use_dropout:
             dout=dropout_backward(dout,cache['cache_drop'+str(layer_index+1)])
         dout=relu_backward(dout,cache['cache_relu'+str(layer_index+1)])
@@ -323,12 +323,13 @@ self.params['b'+str(self.num_layers)])
             grads['gamma'+str(layer_index+1)]=dgamma
             grads['beta'+str(layer_index+1)]=dbeta
         dout,dw,db=affine_backward(dout,cache['cache'+str(layer_index+1)])
-        grads['W'+str(layer_index+1)]=dw
+        grads['W'+str(layer_index+1)]=dw+self.reg*self.params['W'+str(layer_index+1)]
         grads['b'+str(layer_index+1)]=db
-    print loss,'loss'
 
-    ############################################################################
+
+
+     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
-
+    # print grads.keys(),self.params.keys()
     return loss, grads
