@@ -2,6 +2,7 @@ import numpy as np
 
 from cs231n.layers import *
 from cs231n.rnn_layers import *
+from cs231n.rnn_layers import rnn_forward
 
 
 class CaptioningRNN(object):
@@ -135,10 +136,39 @@ class CaptioningRNN(object):
     # defined above to store loss and gradients; grads[k] should give the      #
     # gradients for self.params[k].                                            #
     ############################################################################
-    pass
+    h0,image_cache=affine_forward(features,W_proj,b_proj)
+    # print h0.shape
+
+    word_vector,word_cache=word_embedding_forward(captions_in,W_embed)
+    # print  word_vector.shape
+
+    if self.cell_type=='rnn': 
+        h,cache_rnn=rnn_forward(word_vector,h0,Wx,Wh,b)
+    else :
+        h,cache_rnn=lstm_forward(word_vector,h0,Wx,Wh,b)
+    
+    # print Wx.shape,Wh.shape,b.shape
+    h,cache_rnn=rnn_forward(word_vector,h0,Wx,Wh,b)
+    score,cache_tmp_affine=temporal_affine_forward(h,W_vocab,b_vocab)
+    loss,dscore=temporal_softmax_loss(score,captions_out,mask)
+
+    dh,grads['W_vocab'],grads['b_vocab']=temporal_affine_backward(dscore,cache_tmp_affine)
+    if self.cell_type=='rnn': 
+        dword_vec, dh0, grads['Wx'], grads['Wh'], grads['b']=rnn_backward(dh,cache_rnn)
+    else :
+        dword_vec, dh0, grads['Wx'], grads['Wh'], grads['b']=lstm_backward(dh,cache_rnn)
+
+    grads['W_embed']= word_embedding_backward(dword_vec,word_cache)
+    _,grads['W_proj'],grads['b_proj']= affine_backward(dh0,image_cache)
+
+
+
+
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
+    # print grads.keys(),self.params.keys()
     
     return loss, grads
 
@@ -197,7 +227,21 @@ class CaptioningRNN(object):
     # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
     # a loop.                                                                 #
     ###########################################################################
-    pass
+    prev_word=np.array([self._start]*N)
+    # print prev_word
+    for ii in range(30):
+        word_vec,_=word_embedding_forward(prev_word,W_embed)
+        h0,_=affine_forward(features,W_proj,b_proj)
+        next_h,_=rnn_step_forward(word_vec,h0,Wx,Wh,b )
+        word_vec_score,_=temporal_affine_forward(next_h.reshape(N,1,-1),W_vocab,b_vocab)
+        word_vec=np.argmax(word_vec_score,axis=-1)
+        prev_word=word_vec.reshape(N)
+        # print captions.shape,word_vec,ii
+
+        captions[:,ii:ii+1]=word_vec
+
+
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################

@@ -228,6 +228,8 @@ def word_embedding_backward(dout, cache):
 
 def sigmoid(x):
   """
+
+  !note why it's numerically stable
   A numerically stable version of the logistic sigmoid function.
   """
   pos_mask = (x >= 0)
