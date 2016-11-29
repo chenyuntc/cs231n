@@ -148,7 +148,7 @@ class CaptioningRNN(object):
         h,cache_rnn=lstm_forward(word_vector,h0,Wx,Wh,b)
     
     # print Wx.shape,Wh.shape,b.shape
-    h,cache_rnn=rnn_forward(word_vector,h0,Wx,Wh,b)
+    # h,cache_rnn=rnn_forward(word_vector,h0,Wx,Wh,b)
     score,cache_tmp_affine=temporal_affine_forward(h,W_vocab,b_vocab)
     loss,dscore=temporal_softmax_loss(score,captions_out,mask)
 
@@ -229,10 +229,13 @@ class CaptioningRNN(object):
     ###########################################################################
     prev_word=np.array([self._start]*N)
     # print prev_word
+    prev_c=0
     for ii in range(30):
         word_vec,_=word_embedding_forward(prev_word,W_embed)
         h0,_=affine_forward(features,W_proj,b_proj)
-        next_h,_=rnn_step_forward(word_vec,h0,Wx,Wh,b )
+        if self.cell_type=='lstm':
+            next_h,prev_c,_=lstm_step_forward(word_vec,h0,prev_c,Wx,Wh,b )
+        else:next_h,_=rnn_step_forward(word_vec,h0,Wx,Wh,b )
         word_vec_score,_=temporal_affine_forward(next_h.reshape(N,1,-1),W_vocab,b_vocab)
         word_vec=np.argmax(word_vec_score,axis=-1)
         prev_word=word_vec.reshape(N)
